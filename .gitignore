@@ -1,0 +1,19 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+.DS_Store
+# Anything cached or pulled from an external source; never checked in.
+data/raw/*
+!data/raw/.gitkeep
+# Keep processed outputs and reports under version control as project artifacts,
+# except for two categories that are large and easily regenerable:
+#   1. v1 baseline artifacts that have been superseded by their _v2 counterparts.
+#   2. ridership_with_anomaly*.parquet — the full hourly grid with anomaly cols.
+data/processed/ridership_with_baseline.parquet
+data/processed/baselines.parquet
+data/processed/flagged_anomalies.parquet
+data/processed/ridership_with_anomaly.parquet
+data/processed/ridership_with_anomaly_v2.parquet
+!data/processed/.gitkeep

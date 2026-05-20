@@ -1,0 +1,25 @@
+# Phase 1: ingest + baseline + anomaly
+pandas==2.3.3
+pyarrow==22.0.0
+numpy==2.3.4
+requests==2.32.5
+python-dotenv==1.1.0
+holidays==0.62
+tabulate==0.9.0          # markdown rendering for DQ reports
+lxml==6.0.2              # pandas.read_html parser; sports-reference scraping
+beautifulsoup4==4.14.3   # setlist.fm parsing fallback
+
+# Phase 3: feature extraction + clustering
+scipy==1.16.2
+scikit-learn==1.7.2
+statsmodels==0.14.5
+umap-learn==0.5.7
+
+# Phase 4: viz
+matplotlib==3.10.7
+plotly==6.3.1
+kaleido==1.1.0          # static export for plotly figures
+
+# Dev / notebooks
+jupyterlab==4.4.10
+ipykernel==6.30.1

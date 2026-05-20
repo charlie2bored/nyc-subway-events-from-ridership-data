@@ -1,0 +1,25 @@
+date,start_time,end_time,event_name,event_type,target_key,venue_station_id,expected_attendance,source,source_url,notes
+2024-08-26,11:00,18:00,US Open Day 1 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),first round
+2024-08-26,19:00,23:30,US Open Day 1 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-27,11:00,18:00,US Open Day 2 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-27,19:00,23:30,US Open Day 2 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-28,11:00,18:00,US Open Day 3 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-28,19:00,23:30,US Open Day 3 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-29,11:00,18:00,US Open Day 4 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-29,19:00,23:30,US Open Day 4 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-30,11:00,18:00,US Open Day 5 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),third round begins
+2024-08-30,19:00,23:30,US Open Day 5 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-31,11:00,18:00,US Open Day 6 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-08-31,19:00,23:30,US Open Day 6 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-01,11:00,18:00,US Open Day 7 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-01,19:00,23:30,US Open Day 7 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-02,11:00,18:00,US Open Day 8 (Day Session - Labor Day),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),round of 16
+2024-09-02,19:00,23:30,US Open Day 8 (Night Session - Labor Day),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-03,11:00,18:00,US Open Day 9 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),quarterfinals begin
+2024-09-03,19:00,23:30,US Open Day 9 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-04,11:00,18:00,US Open Day 10 (Day Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-04,19:00,23:30,US Open Day 10 (Night Session),Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),
+2024-09-05,19:00,23:30,US Open Women's Semifinals,Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),women's SF
+2024-09-06,19:00,23:30,US Open Men's Semifinals,Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),men's SF
+2024-09-07,16:00,21:00,US Open Women's Final,Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),championship match
+2024-09-08,14:00,19:00,US Open Men's Final,Other,mets,448,42000,wikipedia.org,https://en.wikipedia.org/wiki/2024_US_Open_(tennis),championship match - Sinner def Fritz

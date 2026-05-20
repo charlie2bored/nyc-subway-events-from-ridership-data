@@ -1,0 +1,10 @@
+date,start_time,end_time,event_name,event_type,target_key,venue_station_id,expected_attendance,source,source_url,notes
+2024-01-01,00:00,02:00,New Year's Day Ball Drop Aftermath,Civic,times_sq,611,1000000,wikipedia.org,https://en.wikipedia.org/wiki/Times_Square_Ball,carryover from NYE 2023->2024
+2024-03-17,11:00,17:00,St. Patrick's Day Parade,Parade,times_sq,611,2000000,wikipedia.org,https://en.wikipedia.org/wiki/St._Patrick%27s_Day_Parade_(New_York_City),parade route up 5th Ave; impacts midtown
+2024-06-30,12:00,18:00,NYC Pride March,Parade,times_sq,611,2000000,wikipedia.org,https://en.wikipedia.org/wiki/NYC_Pride_March,starts in Midtown ends in West Village
+2024-07-04,21:00,23:00,Macy's 4th of July Fireworks,Civic,times_sq,611,3000000,wikipedia.org,https://en.wikipedia.org/wiki/Macy%27s_4th_of_July_Fireworks,fireworks at East River; bleed impact at Times Sq
+2024-09-02,11:00,18:00,West Indian American Day Parade,Parade,barclays,617,1500000,wikipedia.org,https://en.wikipedia.org/wiki/West_Indian_American_Day_Parade,Eastern Parkway in Brooklyn; affects Atlantic Av-Barclays
+2024-11-03,09:00,15:00,NYC Marathon,Civic,times_sq,611,55000,wikipedia.org,https://en.wikipedia.org/wiki/2024_New_York_City_Marathon,5-borough route; no single station impact
+2024-11-11,10:00,14:00,Veterans Day Parade,Parade,times_sq,611,25000,wikipedia.org,https://en.wikipedia.org/wiki/America%27s_Parade,5th Avenue parade
+2024-11-28,09:00,12:00,Macy's Thanksgiving Day Parade,Parade,times_sq,611,3500000,wikipedia.org,https://en.wikipedia.org/wiki/Macy%27s_Thanksgiving_Day_Parade,parade route ends at Macy's Herald Sq
+2024-12-31,15:00,23:59,Times Square New Year's Eve,Civic,times_sq,611,1000000,wikipedia.org,https://en.wikipedia.org/wiki/Times_Square_Ball,Ball Drop revelers arriving afternoon onward
