@@ -1,125 +1,246 @@
 # NYC Subway Events from Ridership Data
 
-> **I built a pipeline that reads NYC's 2024 event calendar - concerts, ball games, parades, the marathon, NYE - straight out of MTA subway ridership data, without ever opening an event schedule.**
+Recover NYC's 2024 event calendar — Mets/Yankees/Knicks/Rangers home games,
+MSG and Barclays concerts, the US Open, parades, NYE — from MTA hourly
+subway ridership alone, then describe what each event type looks like at
+the turnstile.
 
-*A comparative field guide to the signatures different events leave on the system. Built from 12 months of public ridership data, no event metadata required.*
-
-![Knicks Game 7 hero chart](figures/01_hero_baseline_msg_g7.png)
-
----
-
-## The thesis, in one paragraph
-
-The MTA publishes hourly ridership at every station. Pick five station
-archetypes - Penn Station / MSG, Atlantic Av-Barclays, Mets-Willets, Yankee
-Stadium, Times Square - build an event-aware seasonal baseline of what
-"normal" looks like at each, and the deviations from baseline let you
-recover, by date and station, **virtually every major event that happened
-in NYC in 2024** without ever opening a calendar. Then quantify each event
-along five fingerprint dimensions (peak intensity, lead time, lag time,
-decay half-life, asymmetry ratio) and ask which events leave which
-signatures.
-
-The result is a comparative field guide: a **Knicks Game 7 looks like
-this. A World Series night game looks like that. A parade looks
-nothing like either.**
+Every number in this README comes from a file in `data/processed/` that the
+pipeline wrote. Citations are in brackets, e.g. `[matching_report_v2.md]`.
 
 ---
 
-## Key findings
-
-- **The detector found the World Series before being told it existed.** The biggest single anomaly hour of 2024 at Yankee Stadium was `2024-10-29 23:00` at **+15,507 riders above the normal Tuesday baseline**. The pipeline flagged it cold, with no access to any sports schedule or event calendar. Cross-referencing to ground truth identified it as *Yankees vs Dodgers, World Series Game 4*. The same trick recovered NYE at Times Square, the Macy's Thanksgiving Day Parade, the NYC Marathon, every Mets playoff home game, every Knicks playoff home game, and the Rangers' run to the Eastern Conference Final.
-- **The building shapes the fingerprint more than the sport.** Knicks games, Rangers games, and MSG concerts all share one k-means cluster - they're more similar to each other than any of them are to a Mets game next door at Citi Field. Within that cluster, Knicks events have measurably higher peaks than Rangers (p = 0.004) but inhabit the same archetype. This was the most surprising structural result in the data.
-- **Yankees day vs night games are statistically distinct fingerprints.** Night-game peak intensity is 3× day-game (33.5 vs 11.8 × baseline). Day-game ridership dissipates into normal afternoon traffic; night games hit a 1 AM wall.
-- **Parades are spectacularly asymmetric.** People arrive ~6 hours early for the route and leave fast. Every other event type is the reverse.
-- **Across the full year, the system matched 495 of 513 known events** — 96.5% recall after the event-aware baseline refit, up from 477 (93.0%) with the naive baseline, and with no event metadata leaked into detection. Of the 18 remaining misses, all but one were at Penn Station / MSG, where multi-night residencies (Phish, Billy Joel) and high commuter baselines absorb part of the event signal.
-- **An event-aware baseline refit closes a contamination gap.** Naively, the median baseline at MSG was already partially game-day-influenced (Knicks play >50% of winter Tuesday evenings). Excluding event-window hours from the baseline-input pool lifted recall on Knicks/Rangers/MSG-concert events by 5-16 percentage points each.
-
----
-
-## The four charts
-
-1. **[Hero baseline](figures/01_hero_baseline_msg_g7.png)** - Knicks Game 7 at MSG, baseline vs actual ridership, 24h.
-2. **[Urban matrix heatmap](figures/02_urban_matrix.png)** - mean peak intensity by station × event type; cell labels carry sample size.
-3. **[Cluster scatter](figures/03_cluster_scatter.png)** - peak intensity vs asymmetry ratio, colored by k=6 cluster, shape by event type; four exemplar events annotated.
-4. **[Decay small multiples](figures/04_decay_small_multiples.png)** - post-event ridership decay for nine representative events with their fitted curves overlaid.
-
----
-
-## How it works
+## Pipeline
 
 ```
-ingest/         pull 2024 hourly ridership for 5 station archetypes
-                from the MTA Socrata API. Validate, cache to Parquet,
-                emit a data-quality report.
+ingest/         Pull 2024 hourly ridership for 5 station archetypes from
+                MTA Socrata dataset wujg-7c2s. Cache to Parquet, write a
+                data-quality report.
+                                                  [data_quality_report.md]
 
-baseline/       compute hour-of-day × day-of-week median baselines per
-                station, segmented Summer (Apr-Oct) vs Winter (Nov-Mar)
-                and excluding federal holidays. Then refit a second
-                time excluding known event windows, to remove the
-                event-day contamination that depresses detection at
-                venues like MSG where the team plays >50% of weeknights.
+baseline/       Median ridership per (complex_id × season × day-of-week ×
+                hour). 168-cell grids per (complex × season). Federal
+                holidays excluded.
+                                              [baseline_quality_report.md]
+                Refit (v2) additionally excludes ±3h around every known
+                event window.
+                                                [baseline_refit_report.md]
 
-anomaly/        per hour, compute (actual − baseline)/baseline AND a
-                28-day rolling z-score matched on hour-of-week. Flag
-                with both methods, keep both columns for comparison.
+anomaly/        Two flags per hour:
+                  ratio  = ridership / baseline ≥ 1.5
+                  z      = ≥ 3.0 over the prior four same-hour-of-week
+                           observations (28-day rolling window)
+                Either flag → "anomalous hour".
+                                                    [anomaly_report_v2.md]
 
-ground_truth/   scrape MLB / NBA / NHL schedules from the
-                sports-reference.com family, MSG/Barclays concerts from
-                the setlist.fm API, plus hand-curated civic events,
-                playoffs, and US Open sessions. Match each event to a
-                ±3h window of flagged anomalies; join NOAA Central
-                Park weather to explain false negatives.
+ground_truth/   513 events scraped or curated for 2024:
+                  174 MLB, 168 concerts, 88 NBA, 50 NHL,
+                  24 US Open sessions, 5 parades, 4 civic
+                  [ground_truth_events.csv]
+                Sources: baseball/basketball/hockey schedules from the
+                sports-reference family, MSG + Barclays concerts via the
+                setlist.fm API, civic events / US Open / playoffs by
+                hand. NOAA Central Park weather joined for the
+                false-negative explainer.
+                                                    [matching_report_v2.md]
 
-fingerprint/    extract five features per matched event
-                (peak / lead / lag / asymmetry / decay half-life),
-                log-transform peak_intensity, standardize, cluster
-                with k-means + Ward hierarchical, embed with UMAP for
-                visualization only.
+fingerprint/    Five features per matched event:
+                  peak_intensity (log-transformed), lead_time_h,
+                  lag_time_h, asymmetry_ratio, decay_half_life_h
+                                                    [fingerprint_report.md]
 
-viz/            charlie2bored-styled matplotlib charts: the four
-                deliverables above.
+                k-means with silhouette sweep over k ∈ {2..8}.
+                Hierarchical (Ward) reported as a dendrogram. UMAP for
+                viz only.
+                                                        [cluster_report.md]
 ```
 
-Methodology details and decision log live in
-[docs/thought_process.md](docs/thought_process.md) - a
-plain-language journal that a non-technical reader can follow.
+The five stations: `msg_penn` (complexes 318 + 164), `barclays` (617),
+`mets` Willets-Pt (448), `yankee` (604), `times_sq` (611).
+[`ingest/config.py`]
 
 ---
 
-## Reproducing the project
+## Detection results
+
+**Overall recall: 495 / 513 = 96.5%** with the event-aware (v2) baseline.
+The naive (v1) baseline got 477 / 513 = 93.0%.
+[`matching_report.md`, `matching_report_v2.md`]
+
+Per (station × event type):
+
+| station   | event type | events | matched | recall |
+| :-------- | :--------- | -----: | ------: | -----: |
+| yankee    | MLB        |     88 |      88 | 100%   |
+| mets      | MLB        |     86 |      86 | 100%   |
+| mets      | US Open    |     24 |      24 | 100%   |
+| barclays  | NBA        |     38 |      38 | 100%   |
+| barclays  | Parade     |      1 |       1 | 100%   |
+| barclays  | Concert    |     60 |      59 | 98.3%  |
+| msg_penn  | NBA        |     50 |      47 | 94.0%  |
+| msg_penn  | Concert    |    108 |     100 | 92.6%  |
+| msg_penn  | NHL        |     50 |      46 | 92.0%  |
+| times_sq  | Civic      |      4 |       3 | 75.0%  |
+| times_sq  | Parade     |      4 |       3 | 75.0%  |
+
+[`matching_report_v2.md`]
+
+The 18 false negatives are concentrated at MSG (15 of 18: Knicks, Rangers,
+and concerts) and at Times Sq (Veterans Day Parade, NYE 2024). The MSG
+misses cluster in January (rolling-z lacks same-hour-of-week history) and
+on residency artists (Billy Joel, Phish — the artist plays so often the
+baseline absorbs them even after the refit).
+[`matching_report_v2.md` rows 33-50]
+
+---
+
+## What the detector found cold
+
+The largest single hour at Yankee Stadium in 2024 by raw ridership was
+**2024-10-29 23:00**, with 15,664 riders against a Tuesday baseline of
+124.5 — a residual of ~15,540 above normal.
+[`data_quality_report.md` line 333; `anomaly_report_v2.md` line 106]
+
+That hour matches **World Series Game 4 (Yankees vs Dodgers)** in the
+independently scraped ground truth.
+[`ground_truth_events.csv`]
+
+By the rolling-z anomaly score the top Yankee hour is actually
+**2024-10-31 00:00** (post-Game 5 spillover) at z = 4,531.
+[`anomaly_report_v2.md` line 105]
+
+---
+
+## Fingerprint clustering
+
+495 matched events; one 5-D feature vector per event. Z-scored, then
+k-means.
+
+**Silhouette picked k = 2** (score 0.5456). The two clusters split as:
+
+| cluster | n   | profile                                                  |
+| ------: | --: | :------------------------------------------------------- |
+|       0 | 415 | small peak, short lead, short lag, symmetric, fast decay |
+|       1 |  80 | big peak, long lead (~2σ), long lag, front-loaded        |
+
+Cluster 1 is heavily Mets-Willets: **all 24 US Open sessions** and
+**31 of 86 Mets games** land in it, plus a few outliers from every other
+venue. [`cluster_report.md` lines 17-42]
+
+A forced **k = 6** (silhouette local max 0.4519) reveals finer structure
+that the headline k = 2 collapses. At k = 6, Knicks games concentrate in
+cluster 1 (36 of 47); Rangers in cluster 1 (33 of 46); MSG concerts in
+cluster 1 (81 of 100). So "MSG events form a shared cluster" is true at
+k = 6 but not the model's automatic choice.
+[`cluster_report.md` lines 44-73]
+
+### Pre-registered statistical tests
+
+**Knicks vs Rangers at MSG, peak intensity:**
+n = 47 Knicks, 46 Rangers. Median peak 0.957× vs 0.648× baseline.
+Mann-Whitney U two-sided **p = 0.0041**; Welch's t p = 0.0079.
+[`cluster_report.md` line 95]
+
+**Yankees day vs night games, peak intensity:**
+n = 31 day, 57 night. Median peak 11.84× vs 33.51× baseline
+(night is ~2.83× day). MWU **p < 0.001**.
+[`cluster_report.md` line 121]
+
+**Are concerts a distinct cluster?**
+At k = 2: 94.3% of concerts (150/159) land in cluster 0, but cluster 0 is
+the catch-all — concerts are only 36.1% of its members. The answer is no:
+indoor concerts share the cluster with NBA, NHL, and indoor-arena events
+generally. [`cluster_report.md` lines 128-135]
+
+---
+
+## Event-aware refit: what it actually does
+
+The v2 baseline excludes ±3h around every known event window, plus
+federal holidays. Exclusion rates: MSG 25.1% of all hours, Mets 14.4%,
+Barclays 13.6%, Yankee 12.5%, Times Sq 3.7%.
+[`baseline_refit_report.md` lines 7-13]
+
+Aggregate median baselines barely budge (0 to -2% across most cells).
+The lift comes from specific (hour-of-week × season) cells where event
+days dominated the input pool. The clearest example — MSG complex 318,
+winter Tuesday evenings, v1 → v2:
+
+| hour | v1 baseline | v2 baseline | Δ%      |
+| ---: | ----------: | ----------: | ------: |
+|   18 |        3480 |        4180 | +20.1%  |
+|   19 |        2189 |        2553 | +16.6%  |
+|   20 |        1643 |        1765 |  +7.4%  |
+|   21 |        2139 |        1630 | -23.8%  |
+|   22 |        1564 |        1176 | -24.8%  |
+
+Pre-game commute hours rise (real commuter floor was understated because
+post-game crashes pulled the median down); late-evening hours fall
+(event-day exits inflated v1). The detector's gain came from the late-
+evening drop unmasking moderate-attendance games. [`baseline_refit_report.md`
+lines 34-47]
+
+Net recall change: +18 events (477 → 495). The big sub-totals: Knicks
+78% → 94%, Rangers 82% → 92%, MSG concerts 88% → 92.6%.
+[`matching_report.md`, `matching_report_v2.md`]
+
+---
+
+## Honest limits
+
+- **2024 only.** 8,784 hours per complex. Seasonal claims can't be
+  cross-validated against another year.
+- **3,940 flagged hours remain unexplained** (no ground-truth event
+  within ±3h for the right station). Top of the list is Mets-Willets
+  summer nights — consistent with the known gap that the scraper walks
+  MSG and Barclays but not Citi Field concerts.
+  [`matching_report_v2.md` line 54]
+- **Times Sq sample sizes are tiny** (4 civic + 4 parade events). The
+  75% recall and "parades are asymmetric" claim rest on 3-of-4 detections
+  in each category and one cluster of 5 events at k = 6.
+  [`fingerprint_report.md` line 22]
+- **k = 2 is the model's pick.** The interesting Knicks/Rangers/MSG-
+  concerts grouping requires forcing k = 6. The finer structure is real
+  but secondary.
+- **Penn Station aggregates two complexes** (164 and 318). Baselines are
+  per-complex; anomalies are reported per-complex but matched at the
+  archetype level. [`anomaly_report_v2.md` lines 17-24]
+- **Rolling-z needs history.** January events have ≤3 prior same-hour-of-
+  week observations and are more likely to slip through (visible in the
+  Jan-cluster of MSG false negatives).
+
+---
+
+## Reproducing
 
 ```bash
-# Requires Python 3.11+, ~2 GB free disk, 20 minutes total runtime.
+# Python 3.11+, ~2 GB free disk, ~20 min runtime.
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Optional: drop a SETLIST_FM_API_KEY into .env for concert coverage.
+# Optional: SETLIST_FM_API_KEY in .env for full MSG/Barclays concert pulls.
 
-# Pipeline - each stage stops on a report you can review.
-python -m ingest.resolve_stations          # confirm station_complex_id mapping
-python -m ingest.pull_2024                 # ~3 min: cache 2024 ridership
-python -m ingest.data_quality              # data quality report
+python -m ingest.resolve_stations
+python -m ingest.pull_2024
+python -m ingest.data_quality
 
-python -m baseline.build                   # naive seasonal baselines
-python -m anomaly.build                    # naive anomalies
-python -m ground_truth.build               # ~3 min: scrape events
-python -m ground_truth.match               # naive matching report
+python -m baseline.build
+python -m anomaly.build
+python -m ground_truth.build
+python -m ground_truth.match
 
-python -m baseline.refit                   # event-aware baselines (v2)
+python -m baseline.refit
 python -m anomaly.build --suffix _v2
-python -m ground_truth.match --suffix _v2  # v2 matching: 96.5% recall
+python -m ground_truth.match --suffix _v2
 
-python -m fingerprint.extract              # 5 features per event
-python -m fingerprint.cluster              # k-means + hierarchical + UMAP
+python -m fingerprint.extract
+python -m fingerprint.cluster
 
-python -m viz.build_all                    # render the four charts
+python -m viz.build_all
 ```
 
-Every stage writes a Markdown report into `data/processed/` and (where
-applicable) figures into `figures/` as both PNG (300 DPI) and SVG.
-Re-runs are idempotent: HTML / API responses are cached to disk on first
-fetch, so repeated runs don't re-hit external services.
+Each stage writes a Markdown report into `data/processed/`. External
+fetches are cached, so re-runs are idempotent.
 
 ---
 
@@ -127,38 +248,15 @@ fetch, so repeated runs don't re-hit external services.
 
 ```
 ingest/         Socrata client, station resolver, 2024 puller, DQ checks
-baseline/       Hour-of-week median baselines (seasonal, holiday-aware,
-                with event-aware refit)
-anomaly/        Ratio + rolling-z anomaly detection
-ground_truth/   Event scraping (MLB / NBA / NHL / concerts) + hand-
-                curated civic & US Open + matcher + NOAA weather
+baseline/       Hour-of-week median baselines + event-aware refit
+anomaly/        Ratio + rolling-z detection
+ground_truth/   Schedule scrapers, hand-curated events, matcher, NOAA join
 fingerprint/    Feature extraction + clustering
-viz/            Style sheet + four portfolio charts
+viz/            Style sheet + portfolio charts
 data/raw/       Cached external pulls (gitignored)
-data/processed/ Cleaned dataframes + Markdown reports (checked-in)
-figures/        Portfolio chart PNG/SVG outputs
-docs/           Thought-process journal, sourcing plan, data notes
+data/processed/ Outputs + Markdown reports (committed)
+figures/        PNG + SVG chart outputs
 ```
-
----
-
-## Honest limits
-
-- **One year (2024) only.** Calendar-year scope was deliberate but
-  means seasonal effects can't be cross-validated.
-- **Citi Field stadium concerts are missing from ground truth.**
-  setlist.fm has a Citi Field venue page but our scraper only walks
-  MSG and Barclays. After matching, 3,812 flagged anomaly hours
-  across all stations remain unexplained by our ground-truth event
-  set (see `data/processed/matching_report.md`); the top of that
-  list is dominated by Mets-Willets summer nights, which is exactly
-  what missing Citi Field concerts would look like.
-- **Penn Station has two complexes** (1/2/3 vs A/C/E). The msg_penn
-  archetype aggregates both at the anomaly layer; baselines are
-  computed per-complex so the structural difference is preserved.
-- **Phish residencies still slip past.** When an artist plays MSG a
-  dozen nights in a year, even the event-aware baseline absorbs
-  some of their pattern. A second iteration of the refit would help.
 
 ---
 
